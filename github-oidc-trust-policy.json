@@ -9,13 +9,11 @@
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        },
-        "ForAnyValue:StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
           "token.actions.githubusercontent.com:sub": [
-            "repo:RuthMayani/ecr-multi-env-capstone:environment:dev",
-            "repo:RuthMayani/ecr-multi-env-capstone:environment:staging",
-            "repo:RuthMayani/ecr-multi-env-capstone:environment:prod"
+            "repo:RuthMayani@256419290/ecr-multi-env-capstone@1375599598:environment:dev",
+            "repo:RuthMayani@256419290/ecr-multi-env-capstone@1375599598:environment:staging",
+            "repo:RuthMayani@256419290/ecr-multi-env-capstone@1375599598:environment:prod"
           ]
         }
       }

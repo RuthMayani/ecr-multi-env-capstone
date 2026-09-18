@@ -79,7 +79,7 @@ jobs:
               ;;
           esac
 
-  publish:
+   publish:
     name: Push image to Amazon ECR
     needs: prepare
     runs-on: ubuntu-latest
@@ -93,50 +93,49 @@ jobs:
       - name: Check out source code
         uses: actions/checkout@v6
 
+      - name: Display safe OIDC claims
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          import json
+          import base64
+          import urllib.request
+
+          url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"]
+          url += "&audience=sts.amazonaws.com"
+
+          request = urllib.request.Request(
+              url,
+              headers={
+                  "Authorization":
+                      "bearer " + os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]
+              }
+          )
+
+          with urllib.request.urlopen(request) as response:
+              token = json.load(response)["value"]
+
+          payload = token.split(".")[1]
+          payload += "=" * (-len(payload) % 4)
+          claims = json.loads(base64.urlsafe_b64decode(payload))
+
+          safe_claims = {
+              "sub": claims.get("sub"),
+              "aud": claims.get("aud"),
+              "repository": claims.get("repository"),
+              "repository_id": claims.get("repository_id"),
+              "repository_owner": claims.get("repository_owner"),
+              "repository_owner_id": claims.get("repository_owner_id"),
+              "environment": claims.get("environment")
+          }
+
+          print(json.dumps(safe_claims, indent=2))
+          PY
+
       - name: Configure temporary AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           role-session-name: github-ecr-capstone
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
-
-      - name: Log in to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Set image metadata
-        id: metadata
-        shell: bash
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_PREFIX: ${{ needs.prepare.outputs.image_prefix }}
-        run: |
-          SHORT_SHA="${GITHUB_SHA::7}"
-          echo "version_tag=${IMAGE_PREFIX}-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-          echo "latest_tag=${IMAGE_PREFIX}-latest" >> "$GITHUB_OUTPUT"
-          echo "image_uri=${ECR_REGISTRY}/${ECR_REPOSITORY}" >> "$GITHUB_OUTPUT"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build, tag, and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ steps.metadata.outputs.image_uri }}:${{ steps.metadata.outputs.version_tag }}
-            ${{ steps.metadata.outputs.image_uri }}:${{ steps.metadata.outputs.latest_tag }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: true
-          sbom: true
-
-      - name: Display published image
-        run: |
-          echo "Published image:"
-          echo "${{ steps.metadata.outputs.image_uri }}:${{ steps.metadata.outputs.version_tag }}"
-          echo "${{ steps.metadata.outputs.image_uri }}:${{ steps.metadata.outputs.latest_tag }}"
