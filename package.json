@@ -1,0 +1,13 @@
+{
+  "name": "ecr-multi-env-capstone",
+  "version": "1.0.0",
+  "description": "AWS ECR and GitHub Actions multi-environment capstone",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --check server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
