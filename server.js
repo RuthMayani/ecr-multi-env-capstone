@@ -9,7 +9,7 @@ const server = http.createServer((request, response) => {
     JSON.stringify({
       application: "ecr-multi-env-capstone",
       environment,
-      status: "running"
+      status: "deployment-demo"
     })
   );
 });
